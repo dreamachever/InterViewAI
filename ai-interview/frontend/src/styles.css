@@ -1,0 +1,141 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f6f8fb;
+  color: #172033;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.app-layout {
+  min-height: 100vh;
+  background: #f6f8fb;
+}
+
+.app-header {
+  height: 56px;
+  line-height: 56px;
+  background: #ffffff;
+  color: #172033;
+  font-weight: 700;
+  border-bottom: 1px solid #e8edf5;
+  cursor: pointer;
+}
+
+.home-page {
+  min-height: calc(100vh - 56px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: linear-gradient(135deg, #eef5ff 0%, #f8fbff 52%, #f3f7f0 100%);
+}
+
+.home-content {
+  max-width: 760px;
+  text-align: center;
+}
+
+.home-subtitle {
+  font-size: 20px;
+  color: #526070;
+}
+
+.page-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+.narrow-container {
+  max-width: 760px;
+}
+
+.center-page {
+  min-height: calc(100vh - 56px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.interview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+}
+
+.chat-shell {
+  min-height: 680px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.message-list {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.message-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.message-row-left {
+  justify-content: flex-start;
+}
+
+.message-row-right {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  max-width: min(680px, 76%);
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.interviewer-bubble {
+  background: #f2f6fb;
+  border: 1px solid #e1e9f2;
+}
+
+.candidate-bubble {
+  background: #e8f1ff;
+  border: 1px solid #c9ddff;
+}
+
+.chat-input {
+  width: 100%;
+  padding: 16px;
+  border-top: 1px solid #e8edf5;
+  background: #fbfcfe;
+}
+
+.chat-input textarea {
+  resize: none;
+}
+
+@media (max-width: 768px) {
+  .interview-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .message-bubble {
+    max-width: 84%;
+  }
+}

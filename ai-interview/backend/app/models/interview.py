@@ -1,0 +1,30 @@
+import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, Integer, JSON, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+
+
+class Interview(Base):
+    __tablename__ = "interviews"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    type: Mapped[str] = mapped_column(String(50), nullable=False)
+    interviewer_style: Mapped[str] = mapped_column(String(50), nullable=False)
+    target_school: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    target_company: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    target_major: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    target_position: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    resume_text: Mapped[str] = mapped_column(Text, nullable=False)
+    resume_analysis: Mapped[dict] = mapped_column(JSON, default=dict)
+    interview_plan: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(50), default="IN_PROGRESS")
+    current_stage: Mapped[str] = mapped_column(String(50), default="SELF_INTRODUCTION")
+    total_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    messages = relationship("Message", back_populates="interview", cascade="all, delete-orphan", order_by="Message.created_at")
+    report = relationship("Report", back_populates="interview", cascade="all, delete-orphan", uselist=False)
