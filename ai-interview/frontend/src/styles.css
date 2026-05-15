@@ -17,11 +17,25 @@ body {
 .app-header {
   height: 56px;
   line-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background: #ffffff;
   color: #172033;
   font-weight: 700;
   border-bottom: 1px solid #e8edf5;
+}
+
+.app-brand {
+  color: #172033;
   cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.app-user {
+  color: #526070;
+  font-weight: 500;
 }
 
 .home-page {
@@ -51,6 +65,27 @@ body {
 
 .narrow-container {
   max-width: 760px;
+}
+
+.auth-container {
+  max-width: 440px;
+}
+
+.auth-link {
+  margin: 16px 0 0;
+  text-align: center;
+}
+
+.page-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.clickable-row {
+  cursor: pointer;
 }
 
 .center-page {

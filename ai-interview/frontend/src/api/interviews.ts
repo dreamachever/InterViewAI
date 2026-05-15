@@ -4,12 +4,18 @@ import type {
   FinishInterviewResponse,
   InterviewConfig,
   InterviewDetail,
+  InterviewListItem,
   SendAnswerResponse,
 } from '../types/interview';
 import type { Report } from '../types/report';
 
 export async function createInterview(payload: InterviewConfig) {
   const { data } = await apiClient.post<CreateInterviewResponse>('/interviews', payload);
+  return data;
+}
+
+export async function listInterviews() {
+  const { data } = await apiClient.get<InterviewListItem[]>('/interviews');
   return data;
 }
 

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, JSON, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -11,6 +11,7 @@ class Interview(Base):
     __tablename__ = "interviews"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
     interviewer_style: Mapped[str] = mapped_column(String(50), nullable=False)
     target_school: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -26,5 +27,6 @@ class Interview(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    user = relationship("User", back_populates="interviews")
     messages = relationship("Message", back_populates="interview", cascade="all, delete-orphan", order_by="Message.created_at")
     report = relationship("Report", back_populates="interview", cascade="all, delete-orphan", uselist=False)

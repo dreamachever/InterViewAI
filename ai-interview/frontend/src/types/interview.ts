@@ -4,9 +4,7 @@ export interface InterviewConfig {
   type: string;
   interviewer_style: string;
   target_school?: string | null;
-  target_company?: string | null;
   target_major?: string | null;
-  target_position?: string | null;
   resume_text: string;
 }
 
@@ -32,14 +30,23 @@ export interface InterviewDetail {
   type: string;
   interviewer_style: string;
   target_school?: string | null;
-  target_company?: string | null;
   target_major?: string | null;
-  target_position?: string | null;
   current_stage: string;
   status: string;
   total_score?: number | null;
   created_at: string;
   messages: Message[];
+}
+
+export interface InterviewListItem {
+  id: string;
+  type: string;
+  interviewer_style: string;
+  target_school?: string | null;
+  target_major?: string | null;
+  status: string;
+  total_score?: number | null;
+  created_at: string;
 }
 
 export interface SendAnswerResponse {

@@ -1,12 +1,38 @@
-import { Layout } from 'antd';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Button, Layout, Space, Typography } from 'antd';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from './store/authStore';
 
 export function App() {
   const navigate = useNavigate();
+  const { isAuthenticated, logout, user } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <Layout className="app-layout">
-      <Layout.Header className="app-header" onClick={() => navigate('/')}>
-        AI 文字版模拟面试系统
+      <Layout.Header className="app-header">
+        <Typography.Text className="app-brand" onClick={() => navigate('/')}>
+          AI 文字版模拟面试系统
+        </Typography.Text>
+        <Space>
+          {isAuthenticated ? (
+            <>
+              <Typography.Text className="app-user">{user?.nickname || user?.email}</Typography.Text>
+              <Link to="/interviews">我的面试</Link>
+              <Button type="link" onClick={handleLogout}>
+                退出登录
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/login">登录</Link>
+              <Link to="/register">注册</Link>
+            </>
+          )}
+        </Space>
       </Layout.Header>
       <Layout.Content>
         <Outlet />

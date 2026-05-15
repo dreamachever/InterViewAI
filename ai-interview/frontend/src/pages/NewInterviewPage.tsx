@@ -18,9 +18,7 @@ export function NewInterviewPage() {
     mutation.mutate({
       ...values,
       target_school: values.target_school || null,
-      target_company: values.target_company || null,
       target_major: values.target_major || null,
-      target_position: values.target_position || null,
     });
   };
 

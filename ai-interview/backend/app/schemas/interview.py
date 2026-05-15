@@ -38,6 +38,19 @@ class InterviewDetail(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class InterviewListItem(BaseModel):
+    id: str
+    type: str
+    interviewer_style: str
+    target_school: str | None = None
+    target_major: str | None = None
+    status: str
+    total_score: int | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class FinishInterviewResponse(BaseModel):
     report_id: str
     total_score: int

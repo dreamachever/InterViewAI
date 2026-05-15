@@ -18,7 +18,7 @@ export function InterviewHeader({ interview, finishing, onFinish }: Props) {
           <Tag color="blue">{interview.interviewer_style}</Tag>
           <Tag color="purple">{interview.current_stage}</Tag>
           {interview.target_school && <Tag>{interview.target_school}</Tag>}
-          {interview.target_company && <Tag>{interview.target_company}</Tag>}
+          {interview.target_major && <Tag>{interview.target_major}</Tag>}
         </Space>
       </Space>
       <Button danger loading={finishing} onClick={onFinish}>

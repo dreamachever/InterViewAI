@@ -17,8 +17,8 @@ class ReportService:
         self.messages = MessageRepository(db)
         self.reports = ReportRepository(db)
 
-    async def generate_for_interview(self, interview_id: str) -> Report:
-        interview = self.interviews.get(interview_id)
+    async def generate_for_interview(self, interview_id: str, user_id: str) -> Report:
+        interview = self.interviews.get_for_user(interview_id, user_id)
         if not interview:
             raise HTTPException(status_code=404, detail="Interview not found")
 
@@ -35,7 +35,10 @@ class ReportService:
         self.interviews.save(interview)
         return saved
 
-    def get_report(self, interview_id: str) -> Report:
+    def get_report(self, interview_id: str, user_id: str) -> Report:
+        interview = self.interviews.get_for_user(interview_id, user_id)
+        if not interview:
+            raise HTTPException(status_code=404, detail="Interview not found")
         report = self.reports.get_by_interview(interview_id)
         if not report:
             raise HTTPException(status_code=404, detail="Report not found")
@@ -52,9 +55,7 @@ class ReportService:
             "type": interview.type,
             "interviewer_style": interview.interviewer_style,
             "target_school": interview.target_school,
-            "target_company": interview.target_company,
             "target_major": interview.target_major,
-            "target_position": interview.target_position,
             "current_stage": interview.current_stage,
         }
 

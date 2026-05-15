@@ -23,23 +23,31 @@ class InterviewService:
         self.interviews = InterviewRepository(db)
         self.messages = MessageRepository(db)
 
-    async def create_interview(self, payload: InterviewCreate) -> tuple[Interview, Message]:
+    async def create_interview(self, payload: InterviewCreate, user_id: str) -> tuple[Interview, Message]:
         analysis = await self.resume_service.analyze(payload.resume_text)
-        interview = Interview(**payload.model_dump(), resume_analysis=analysis.model_dump(), interview_plan={"source": "resume_analysis"})
+        interview = Interview(
+            **payload.model_dump(),
+            user_id=user_id,
+            resume_analysis=analysis.model_dump(),
+            interview_plan={"source": "resume_analysis"},
+        )
         interview = self.interviews.create(interview)
         first_message = self.messages.create(
             Message(interview_id=interview.id, role="interviewer", content=FIRST_QUESTION, stage=interview.current_stage)
         )
         return interview, first_message
 
-    def get_detail(self, interview_id: str) -> Interview:
-        interview = self.interviews.get(interview_id)
+    def list_for_user(self, user_id: str) -> list[Interview]:
+        return self.interviews.list_for_user(user_id)
+
+    def get_detail(self, interview_id: str, user_id: str) -> Interview:
+        interview = self.interviews.get_for_user(interview_id, user_id)
         if not interview:
             raise HTTPException(status_code=404, detail="Interview not found")
         return interview
 
-    async def answer(self, interview_id: str, answer: str) -> AnswerResponse:
-        interview = self.get_detail(interview_id)
+    async def answer(self, interview_id: str, answer: str, user_id: str) -> AnswerResponse:
+        interview = self.get_detail(interview_id, user_id)
         if interview.status != "IN_PROGRESS":
             raise HTTPException(status_code=400, detail="Interview is not in progress")
         if not answer.strip():
@@ -93,9 +101,7 @@ class InterviewService:
             "type": interview.type,
             "interviewer_style": interview.interviewer_style,
             "target_school": interview.target_school,
-            "target_company": interview.target_company,
             "target_major": interview.target_major,
-            "target_position": interview.target_position,
             "current_stage": interview.current_stage,
         }
 
