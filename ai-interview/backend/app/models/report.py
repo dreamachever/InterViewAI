@@ -12,6 +12,8 @@ class Report(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     interview_id: Mapped[str] = mapped_column(String, ForeignKey("interviews.id"), unique=True, nullable=False, index=True)
+    provider: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    model: Mapped[str | None] = mapped_column(String(255), nullable=True)
     total_score: Mapped[int] = mapped_column(Integer, nullable=False)
     dimension_scores: Mapped[dict] = mapped_column(JSON, default=dict)
     overall_comment: Mapped[str] = mapped_column(Text, nullable=False)

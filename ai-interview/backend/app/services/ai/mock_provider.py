@@ -1,11 +1,11 @@
-from app.schemas.ai import NextQuestionResult, ReportResult, ResumeAnalysis
+from app.schemas.ai import NextQuestionResult, ReportResult, ResumeAnalysis, ResumeDiagnosticResult
 
 
 class MockProvider:
     def analyze_resume(self, resume_text: str) -> ResumeAnalysis:
         return ResumeAnalysis(
-            summary="候选人具备计算机相关学习背景，简历中包含项目或科研经历，适合围绕项目贡献、技术细节和动机匹配度展开。",
-            education="教育背景信息较完整，但仍建议在面试中核实课程基础、成绩排名和目标方向匹配度。",
+            summary="候选人具备保研面试所需的基础经历，适合围绕科研经历、项目贡献和申请动机展开追问。",
+            education="教育背景信息可用于判断专业基础，建议面试中补充课程、排名和目标方向匹配度。",
             projects=[
                 {
                     "name": "简历核心项目",
@@ -49,7 +49,7 @@ class MockProvider:
                 "表达逻辑": {"score": 16, "max": 20, "comment": "表达较清楚，但部分回答缺少结构。"},
                 "专业能力": {"score": 18, "max": 25, "comment": "能说明基本概念，但项目细节仍需加强。"},
                 "经历匹配": {"score": 17, "max": 20, "comment": "经历与目标方向有相关性，动机可以更具体。"},
-                "抗压表现": {"score": 12, "max": 15, "comment": "面对追问能够继续回答，但证据链略弱。"},
+                "抗压表现": {"score": 12, "max": 15, "comment": "面对追问能继续回答，但证据链略弱。"},
                 "发展潜力": {"score": 15, "max": 20, "comment": "具备学习潜力，建议强化复盘表达。"},
             },
             overall_comment="整体表现中等偏上。候选人能够围绕经历展开回答，但项目数据、个人贡献和结果复盘需要进一步打磨。",
@@ -66,4 +66,36 @@ class MockProvider:
                 }
             ],
             next_training_plan=["重新准备 1 分钟自我介绍", "补充每个项目的数据集、指标和个人贡献", "练习压力追问下的简洁回答"],
+        )
+
+    def diagnose_resume(self) -> ResumeDiagnosticResult:
+        return ResumeDiagnosticResult(
+            overall_score=78,
+            summary="简历具备保研面试的基础素材，但需要进一步突出科研问题、个人贡献和量化成果。",
+            strengths=["经历方向较集中", "具备项目或科研经历", "适合围绕动机与项目细节展开面试准备"],
+            weaknesses=["部分经历缺少个人贡献描述", "结果指标不够量化", "导师可能追问实验细节与复盘"],
+            suggestions=[
+                {
+                    "priority": "high",
+                    "problem": "项目描述偏过程化",
+                    "advice": "补充背景问题、个人负责模块、方法选择、结果指标和复盘。",
+                    "example": "负责数据清洗与对比实验，使模型 F1 相比 baseline 提升 3.2%。",
+                },
+                {
+                    "priority": "medium",
+                    "problem": "科研动机表达不足",
+                    "advice": "把经历和目标导师方向、未来研究兴趣建立联系。",
+                    "example": "该经历让我开始关注多模态信息融合在教育场景中的应用。",
+                },
+            ],
+            section_reviews=[
+                {"section": "科研经历", "score": 76, "comment": "方向可用，但需要补充方法选择和结果可信度。"},
+                {"section": "项目经历", "score": 80, "comment": "素材较完整，建议强化个人贡献和量化结果。"},
+            ],
+            follow_up_questions=[
+                "你在这个项目中具体负责哪一部分？",
+                "为什么选择这个方法，而不是其他 baseline？",
+                "实验结果如何验证，是否有消融实验？",
+                "这段经历如何支撑你的保研申请方向？",
+            ],
         )

@@ -49,3 +49,26 @@ class ReportResult(BaseModel):
     resume_risks: list[str] = Field(default_factory=list)
     question_reviews: list[QuestionReview] = Field(default_factory=list)
     next_training_plan: list[str] = Field(default_factory=list)
+
+
+class ResumeSuggestion(BaseModel):
+    priority: str = "medium"
+    problem: str
+    advice: str
+    example: str | None = None
+
+
+class ResumeSectionReview(BaseModel):
+    section: str
+    score: int
+    comment: str
+
+
+class ResumeDiagnosticResult(BaseModel):
+    overall_score: int
+    summary: str
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+    suggestions: list[ResumeSuggestion] = Field(default_factory=list)
+    section_reviews: list[ResumeSectionReview] = Field(default_factory=list)
+    follow_up_questions: list[str] = Field(default_factory=list)

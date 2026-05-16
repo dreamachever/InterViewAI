@@ -44,7 +44,12 @@ export function InterviewPage() {
   return (
     <div className="page-container">
       <InterviewHeader interview={data} finishing={finishMutation.isPending} onFinish={() => finishMutation.mutate()} />
-      <InterviewChat messages={data.messages} sending={sendMutation.isPending} onSend={(answer) => sendMutation.mutate(answer)} />
+      <InterviewChat
+        messages={data.messages}
+        sending={sendMutation.isPending}
+        voiceEnabled={data.voice_enabled}
+        onSend={(answer) => sendMutation.mutate(answer)}
+      />
     </div>
   );
 }

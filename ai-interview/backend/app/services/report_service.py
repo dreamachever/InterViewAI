@@ -27,11 +27,17 @@ class ReportService:
             self._interview_payload(interview),
             interview.resume_analysis or {},
             [self._message_payload(m) for m in messages],
+            self.db,
+            user_id,
+            interview.llm_config_id,
         )
-        report = self._to_report(interview_id, result)
+        provider, model = self.llm.provider_meta()
+        report = self._to_report(interview_id, result, provider, model)
         saved = self.reports.create_or_update(report)
         interview.status = "FINISHED"
         interview.total_score = saved.total_score
+        interview.llm_provider_used = provider
+        interview.llm_model_used = model
         self.interviews.save(interview)
         return saved
 
@@ -45,9 +51,9 @@ class ReportService:
         return report
 
     @staticmethod
-    def _to_report(interview_id: str, result: ReportResult) -> Report:
+    def _to_report(interview_id: str, result: ReportResult, provider: str, model: str | None) -> Report:
         data = result.model_dump()
-        return Report(interview_id=interview_id, full_report=data, **data)
+        return Report(interview_id=interview_id, provider=provider, model=model, full_report=data, **data)
 
     @staticmethod
     def _interview_payload(interview) -> dict:

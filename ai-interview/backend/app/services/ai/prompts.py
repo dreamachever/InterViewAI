@@ -121,3 +121,39 @@ JSON schema:
 完整对话：
 {json.dumps(messages, ensure_ascii=False)}
 """.strip()
+
+
+def build_resume_diagnostic_prompt(resume_text: str) -> str:
+    return f"""
+你是一位专注保研申请与导师面试的中文简历诊断专家。请根据简历文本生成严格 JSON，不要输出 markdown 或额外解释。
+诊断要服务于保研面试场景，重点关注科研潜力、项目可信度、个人贡献、量化成果、导师可能追问风险。
+
+JSON schema:
+{{
+  "overall_score": 82,
+  "summary": "整体诊断摘要",
+  "strengths": ["优势1", "优势2"],
+  "weaknesses": ["问题1", "问题2"],
+  "suggestions": [
+    {{
+      "priority": "high | medium | low",
+      "problem": "具体问题",
+      "advice": "修改建议",
+      "example": "可参考的改写示例"
+    }}
+  ],
+  "section_reviews": [
+    {{
+      "section": "教育背景/科研经历/项目经历/竞赛奖项/技能等",
+      "score": 78,
+      "comment": "该部分评价"
+    }}
+  ],
+  "follow_up_questions": [
+    "导师可能围绕简历追问的问题"
+  ]
+}}
+
+简历文本：
+{resume_text}
+""".strip()

@@ -6,6 +6,8 @@ from app.schemas.ai import DimensionScore, QuestionReview
 class ReportOut(BaseModel):
     id: str | None = None
     interview_id: str | None = None
+    provider: str | None = None
+    model: str | None = None
     total_score: int
     dimension_scores: dict[str, DimensionScore]
     overall_comment: str

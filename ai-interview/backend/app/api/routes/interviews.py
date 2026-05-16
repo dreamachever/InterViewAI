@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -50,6 +50,17 @@ def get_interview(
     current_user: User = Depends(get_current_user),
 ):
     return InterviewService(db, llm).get_detail(interview_id, current_user.id)
+
+
+@router.delete("/{interview_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_interview(
+    interview_id: str,
+    db: Session = Depends(get_db),
+    llm: LLMService = Depends(get_llm_service),
+    current_user: User = Depends(get_current_user),
+):
+    InterviewService(db, llm).delete_interview(interview_id, current_user.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{interview_id}/messages", response_model=AnswerResponse)

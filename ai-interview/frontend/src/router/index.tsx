@@ -3,9 +3,12 @@ import { HomePage } from '../pages/HomePage';
 import { InterviewHistoryPage } from '../pages/InterviewHistoryPage';
 import { InterviewPage } from '../pages/InterviewPage';
 import { LoginPage } from '../pages/LoginPage';
+import { LLMSettingsPage } from '../pages/LLMSettingsPage';
 import { NewInterviewPage } from '../pages/NewInterviewPage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { ReportPage } from '../pages/ReportPage';
+import { ResumeCenterPage } from '../pages/ResumeCenterPage';
+import { ResumeDetailPage } from '../pages/ResumeDetailPage';
 import { App } from '../App';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -24,6 +27,9 @@ export const router = createBrowserRouter([
           { path: 'interviews/new', element: <NewInterviewPage /> },
           { path: 'interviews/:id', element: <InterviewPage /> },
           { path: 'interviews/:id/report', element: <ReportPage /> },
+          { path: 'resumes', element: <ResumeCenterPage /> },
+          { path: 'resumes/:id', element: <ResumeDetailPage /> },
+          { path: 'settings/llm', element: <LLMSettingsPage /> },
         ],
       },
     ],

@@ -5,7 +5,10 @@ export interface InterviewConfig {
   interviewer_style: string;
   target_school?: string | null;
   target_major?: string | null;
-  resume_text: string;
+  resume_text?: string | null;
+  resume_id?: string | null;
+  llm_config_id?: string | null;
+  voice_enabled?: boolean;
 }
 
 export interface Message {
@@ -33,6 +36,7 @@ export interface InterviewDetail {
   target_major?: string | null;
   current_stage: string;
   status: string;
+  voice_enabled: boolean;
   total_score?: number | null;
   created_at: string;
   messages: Message[];
@@ -45,6 +49,7 @@ export interface InterviewListItem {
   target_school?: string | null;
   target_major?: string | null;
   status: string;
+  voice_enabled: boolean;
   total_score?: number | null;
   created_at: string;
 }

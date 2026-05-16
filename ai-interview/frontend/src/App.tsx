@@ -15,13 +15,15 @@ export function App() {
     <Layout className="app-layout">
       <Layout.Header className="app-header">
         <Typography.Text className="app-brand" onClick={() => navigate('/')}>
-          AI 文字版模拟面试系统
+          保研 AI 模拟面试系统
         </Typography.Text>
         <Space>
           {isAuthenticated ? (
             <>
               <Typography.Text className="app-user">{user?.nickname || user?.email}</Typography.Text>
               <Link to="/interviews">我的面试</Link>
+              <Link to="/resumes">简历中心</Link>
+              <Link to="/settings/llm">模型设置</Link>
               <Button type="link" onClick={handleLogout}>
                 退出登录
               </Button>

@@ -24,6 +24,10 @@ export async function getInterview(interviewId: string) {
   return data;
 }
 
+export async function deleteInterview(interviewId: string) {
+  await apiClient.delete(`/interviews/${interviewId}`);
+}
+
 export async function sendAnswer(interviewId: string, answer: string) {
   const { data } = await apiClient.post<SendAnswerResponse>(`/interviews/${interviewId}/messages`, { answer });
   return data;

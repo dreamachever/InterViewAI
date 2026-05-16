@@ -1,16 +1,25 @@
-import { Button, Card, Empty, Space, Table, Tag, Typography, message } from 'antd';
+import { Button, Card, Empty, Popconfirm, Space, Table, Tag, Typography, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { getApiError } from '../api/client';
-import { listInterviews } from '../api/interviews';
+import { deleteInterview, listInterviews } from '../api/interviews';
 import type { InterviewListItem } from '../types/interview';
 
 export function InterviewHistoryPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ['interviews'],
     queryFn: listInterviews,
+  });
+  const deleteMutation = useMutation({
+    mutationFn: deleteInterview,
+    onSuccess: () => {
+      message.success('面试记录已删除');
+      queryClient.invalidateQueries({ queryKey: ['interviews'] });
+    },
+    onError: (deleteError) => message.error(getApiError(deleteError)),
   });
 
   if (error) {
@@ -55,7 +64,13 @@ export function InterviewHistoryPage() {
               title: '操作',
               render: (_, record) => (
                 <Space>
-                  <Button type="link" onClick={() => navigate(`/interviews/${record.id}`)}>
+                  <Button
+                    type="link"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(`/interviews/${record.id}`);
+                    }}
+                  >
                     进入
                   </Button>
                   {record.status === 'FINISHED' && (
@@ -69,6 +84,27 @@ export function InterviewHistoryPage() {
                       报告
                     </Button>
                   )}
+                  <Popconfirm
+                    title="确认删除这条面试记录？"
+                    description="删除后会同步移除对话消息和报告。"
+                    okText="删除"
+                    cancelText="取消"
+                    okButtonProps={{ danger: true }}
+                    onConfirm={(event) => {
+                      event?.stopPropagation();
+                      deleteMutation.mutate(record.id);
+                    }}
+                    onCancel={(event) => event?.stopPropagation()}
+                  >
+                    <Button
+                      type="link"
+                      danger
+                      loading={deleteMutation.isPending}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      删除
+                    </Button>
+                  </Popconfirm>
                 </Space>
               ),
             },

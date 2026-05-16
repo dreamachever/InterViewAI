@@ -9,7 +9,7 @@ export function HomePage() {
       <Space direction="vertical" size="large" className="home-content">
         <Typography.Title>上传简历，生成你的专属 AI 面试官</Typography.Title>
         <Typography.Paragraph className="home-subtitle">
-          先从文字版模拟面试开始，帮你提前发现简历风险和回答短板
+          支持文字问答和语音面试，帮你提前发现简历风险、回答短板和高频追问点。
         </Typography.Paragraph>
         <Button type="primary" size="large" icon={<ArrowRightOutlined />} onClick={() => navigate('/interviews/new')}>
           开始模拟面试

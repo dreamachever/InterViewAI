@@ -11,6 +11,8 @@ class ReportRepository:
         existing = self.get_by_interview(report.interview_id)
         if existing:
             existing.total_score = report.total_score
+            existing.provider = report.provider
+            existing.model = report.model
             existing.dimension_scores = report.dimension_scores
             existing.overall_comment = report.overall_comment
             existing.strengths = report.strengths

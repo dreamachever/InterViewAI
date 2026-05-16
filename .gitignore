@@ -22,6 +22,9 @@ build/
 coverage/
 *.tsbuildinfo
 
+# Runtime uploads
+ai-interview/backend/storage/
+
 # Logs
 *.log
 npm-debug.log*

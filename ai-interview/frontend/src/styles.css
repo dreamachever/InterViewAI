@@ -164,10 +164,44 @@ body {
   resize: none;
 }
 
+.voice-toolbar {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e8edf5;
+  background: #ffffff;
+}
+
+.voice-interim {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  background: #f4f8ff;
+  border: 1px solid #d8e8ff;
+  border-radius: 8px;
+}
+
+.resume-text {
+  max-height: 680px;
+  margin-top: 18px;
+  padding: 12px;
+  overflow: auto;
+  white-space: pre-wrap;
+  background: #fbfcfe;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+}
+
 @media (max-width: 768px) {
   .interview-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .app-header {
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 16px;
+    line-height: 32px;
   }
 
   .message-bubble {

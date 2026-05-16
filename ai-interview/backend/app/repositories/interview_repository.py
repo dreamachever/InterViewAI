@@ -32,3 +32,7 @@ class InterviewRepository:
         self.db.commit()
         self.db.refresh(interview)
         return interview
+
+    def delete(self, interview: Interview) -> None:
+        self.db.delete(interview)
+        self.db.commit()

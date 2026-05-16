@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     doubao_api_key: str | None = None
     doubao_base_url: str | None = None
     doubao_model: str = ""
+    llm_config_encryption_key: str | None = None
+    resume_upload_max_mb: int = 10
+    resume_storage_dir: str = "storage/resumes"
     jwt_secret_key: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080

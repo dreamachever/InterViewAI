@@ -3,8 +3,10 @@ from sqlalchemy.orm import Session
 
 from app.models.interview import Interview
 from app.models.message import Message
+from app.repositories.llm_config_repository import LLMConfigRepository
 from app.repositories.interview_repository import InterviewRepository
 from app.repositories.message_repository import MessageRepository
+from app.repositories.resume_repository import ResumeRepository
 from app.schemas.interview import InterviewCreate
 from app.schemas.message import AnswerResponse
 from app.services.ai.llm_service import LLMService
@@ -22,14 +24,28 @@ class InterviewService:
         self.resume_service = ResumeService(llm)
         self.interviews = InterviewRepository(db)
         self.messages = MessageRepository(db)
+        self.resumes = ResumeRepository(db)
+        self.llm_configs = LLMConfigRepository(db)
 
     async def create_interview(self, payload: InterviewCreate, user_id: str) -> tuple[Interview, Message]:
-        analysis = await self.resume_service.analyze(payload.resume_text)
+        resume_text = payload.resume_text or ""
+        if payload.resume_id:
+            resume = self.resumes.get_for_user(payload.resume_id, user_id)
+            if not resume:
+                raise HTTPException(status_code=404, detail="Resume not found")
+            resume_text = resume.parsed_text
+        if payload.llm_config_id and not self.llm_configs.get_for_user(payload.llm_config_id, user_id):
+            raise HTTPException(status_code=404, detail="LLM config not found")
+        analysis = await self.llm.analyze_resume(resume_text, self.db, user_id, payload.llm_config_id)
+        provider, model = self.llm.provider_meta()
         interview = Interview(
-            **payload.model_dump(),
+            **payload.model_dump(exclude={"resume_text"}),
             user_id=user_id,
+            resume_text=resume_text,
             resume_analysis=analysis.model_dump(),
-            interview_plan={"source": "resume_analysis"},
+            interview_plan={"source": "resume_analysis", "resume_source": "uploaded_resume" if payload.resume_id else "pasted_text"},
+            llm_provider_used=provider,
+            llm_model_used=model,
         )
         interview = self.interviews.create(interview)
         first_message = self.messages.create(
@@ -45,6 +61,10 @@ class InterviewService:
         if not interview:
             raise HTTPException(status_code=404, detail="Interview not found")
         return interview
+
+    def delete_interview(self, interview_id: str, user_id: str) -> None:
+        interview = self.get_detail(interview_id, user_id)
+        self.interviews.delete(interview)
 
     async def answer(self, interview_id: str, answer: str, user_id: str) -> AnswerResponse:
         interview = self.get_detail(interview_id, user_id)
@@ -68,7 +88,13 @@ class InterviewService:
             [self._message_payload(m) for m in messages],
             answer,
             stage_for_answer,
+            self.db,
+            user_id,
+            interview.llm_config_id,
         )
+        provider, model = self.llm.provider_meta()
+        interview.llm_provider_used = provider
+        interview.llm_model_used = model
         controlled_stage, action = resolve_stage(stage_for_answer, messages, ai_result.action)
         if action != "end_interview" and controlled_stage != stage_for_answer:
             ai_result = await self.llm.generate_next_question(
@@ -77,8 +103,14 @@ class InterviewService:
                 [self._message_payload(m) for m in messages],
                 answer,
                 controlled_stage,
+                self.db,
+                user_id,
+                interview.llm_config_id,
             )
             ai_result.stage = controlled_stage
+            provider, model = self.llm.provider_meta()
+            interview.llm_provider_used = provider
+            interview.llm_model_used = model
         interview.current_stage = controlled_stage
         self.interviews.save(interview)
 

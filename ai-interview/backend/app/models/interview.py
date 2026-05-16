@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -12,6 +12,11 @@ class Interview(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False, index=True)
+    resume_id: Mapped[str | None] = mapped_column(String, ForeignKey("resumes.id"), nullable=True, index=True)
+    llm_config_id: Mapped[str | None] = mapped_column(String, ForeignKey("user_llm_configs.id"), nullable=True, index=True)
+    llm_provider_used: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    llm_model_used: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    voice_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
     interviewer_style: Mapped[str] = mapped_column(String(50), nullable=False)
     target_school: Mapped[str | None] = mapped_column(String(255), nullable=True)
