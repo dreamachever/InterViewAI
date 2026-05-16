@@ -5,13 +5,14 @@ from app.core.config import get_settings
 from app.core.encryption import decrypt_secret
 from app.models.user_llm_config import UserLLMConfig
 from app.repositories.llm_config_repository import LLMConfigRepository
-from app.schemas.ai import NextQuestionResult, ReportResult, ResumeAnalysis, ResumeDiagnosticResult
+from app.schemas.ai import ExperienceInsightResult, NextQuestionResult, ReportResult, ResumeAnalysis, ResumeDiagnosticResult
 from app.services.ai.deepseek_provider import DeepSeekProvider
 from app.services.ai.doubao_provider import DoubaoProvider
 from app.services.ai.mock_provider import MockProvider
 from app.services.ai.openai_compatible_provider import OpenAICompatibleProvider, ProviderOptions
 from app.services.ai.openai_provider import OpenAIProvider
 from app.services.ai.prompts import (
+    build_experience_extract_prompt,
     build_next_question_prompt,
     build_report_prompt,
     build_resume_analysis_prompt,
@@ -139,15 +140,17 @@ class LLMService:
         messages: list[dict],
         latest_answer: str,
         stage: str,
+        experience_context: list[dict] | None = None,
         db: Session | None = None,
         user_id: str | None = None,
         llm_config_id: str | None = None,
     ) -> NextQuestionResult:
         provider = self.resolve_runtime(db, user_id, llm_config_id)
+        candidate_turns = len([m for m in messages if m["role"] == "candidate"])
         if provider is None:
             self._mark_mock(None if self.last_provider_used == "mock" else "No usable LLM provider configured")
-            return self.mock.generate_next_question(len([m for m in messages if m["role"] == "candidate"]), stage, latest_answer)
-        prompt = build_next_question_prompt(interview, resume_analysis, messages, latest_answer, stage)
+            return self.mock.generate_next_question(candidate_turns, stage, latest_answer, experience_context)
+        prompt = build_next_question_prompt(interview, resume_analysis, messages, latest_answer, stage, experience_context)
         try:
             data = await provider.complete_json(prompt)
             result = NextQuestionResult.model_validate(data)
@@ -157,7 +160,7 @@ class LLMService:
         except (ValidationError, Exception) as exc:
             attempted_provider = self.last_provider_used
             self._mark_mock(f"{attempted_provider} next question failed: {self._safe_error_message(exc)}")
-            return self.mock.generate_next_question(len([m for m in messages if m["role"] == "candidate"]), stage, latest_answer)
+            return self.mock.generate_next_question(candidate_turns, stage, latest_answer, experience_context)
 
     async def generate_report(
         self,
@@ -204,6 +207,29 @@ class LLMService:
             attempted_provider = self.last_provider_used
             self._mark_mock(f"{attempted_provider} resume diagnosis failed: {self._safe_error_message(exc)}")
             return self.mock.diagnose_resume()
+
+    async def extract_experience_insights(
+        self,
+        raw_content: str,
+        metadata: dict,
+        db: Session | None = None,
+        user_id: str | None = None,
+        llm_config_id: str | None = None,
+    ) -> ExperienceInsightResult:
+        provider = self.resolve_runtime(db, user_id, llm_config_id)
+        if provider is None:
+            self._mark_mock(None if self.last_provider_used == "mock" else "No usable LLM provider configured")
+            return self.mock.extract_experience_insights(raw_content, metadata)
+        prompt = build_experience_extract_prompt(raw_content, metadata)
+        try:
+            data = await provider.complete_json(prompt)
+            result = ExperienceInsightResult.model_validate(data)
+            self._mark_success()
+            return result
+        except (ValidationError, Exception) as exc:
+            attempted_provider = self.last_provider_used
+            self._mark_mock(f"{attempted_provider} experience extract failed: {self._safe_error_message(exc)}")
+            return self.mock.extract_experience_insights(raw_content, metadata)
 
     def _system_model_name(self, provider_name: str) -> str | None:
         return {

@@ -18,3 +18,4 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     interviews = relationship("Interview", back_populates="user")
+    experiences = relationship("InterviewExperience", cascade="all, delete-orphan")

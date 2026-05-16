@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     doubao_api_key: str | None = None
     doubao_base_url: str | None = None
     doubao_model: str = ""
+    search_provider: str = "duckduckgo_html"
+    duckduckgo_html_url: str = "https://html.duckduckgo.com/html/"
+    search_max_results: int = 5
     llm_config_encryption_key: str | None = None
     resume_upload_max_mb: int = 10
     resume_storage_dir: str = "storage/resumes"

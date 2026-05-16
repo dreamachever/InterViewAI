@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.schemas.experience import InterviewExperienceReference
 from app.schemas.message import MessageOut
 
 
@@ -16,6 +17,7 @@ class InterviewCreate(BaseModel):
     resume_id: str | None = None
     llm_config_id: str | None = None
     voice_enabled: bool = False
+    experience_ids: list[str] = Field(default_factory=list, max_length=3)
 
     @model_validator(mode="after")
     def validate_resume_source(self):
@@ -44,6 +46,7 @@ class InterviewDetail(BaseModel):
     total_score: int | None = None
     created_at: datetime
     messages: list[MessageOut] = []
+    experiences: list[InterviewExperienceReference] = []
 
     model_config = {"from_attributes": True}
 
@@ -58,6 +61,7 @@ class InterviewListItem(BaseModel):
     voice_enabled: bool = False
     total_score: int | None = None
     created_at: datetime
+    experiences: list[InterviewExperienceReference] = []
 
     model_config = {"from_attributes": True}
 

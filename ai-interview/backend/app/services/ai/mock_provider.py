@@ -1,4 +1,4 @@
-from app.schemas.ai import NextQuestionResult, ReportResult, ResumeAnalysis, ResumeDiagnosticResult
+from app.schemas.ai import ExperienceInsightResult, NextQuestionResult, ReportResult, ResumeAnalysis, ResumeDiagnosticResult
 
 
 class MockProvider:
@@ -14,12 +14,18 @@ class MockProvider:
                     "risks": ["个人贡献描述可能不够具体", "缺少可量化结果或复盘"],
                 }
             ],
-            strengths=["经历与目标方向有一定相关性", "具备继续深挖的项目材料"],
+            strengths=["经历与目标方向有一定相关性", "具备继续深挖的项目素材"],
             risks=["项目细节需要验证", "部分成果可能缺少量化指标"],
             recommended_focus=["自我介绍", "科研潜力", "项目个人贡献", "专业基础", "申请动机"],
         )
 
-    def generate_next_question(self, turn_count: int, stage: str, latest_answer: str) -> NextQuestionResult:
+    def generate_next_question(
+        self,
+        turn_count: int,
+        stage: str,
+        latest_answer: str,
+        experience_context: list[dict] | None = None,
+    ) -> NextQuestionResult:
         questions = [
             "请先做一个 1 分钟自我介绍，并重点说明你的核心经历和申请动机。",
             "你刚才提到的项目里，你本人最核心的贡献是什么？请具体一点。",
@@ -30,16 +36,25 @@ class MockProvider:
             "我觉得你的回答里量化结果还不够清楚。你能用更简洁的方式重新说明吗？",
             "最后，请你用三句话总结自己最适合这个机会的理由。",
         ]
+        if experience_context:
+            real_questions = [
+                item.get("question")
+                for experience in experience_context
+                for item in experience.get("real_questions", [])
+                if isinstance(item, dict) and item.get("question")
+            ]
+            if real_questions:
+                questions[2] = real_questions[0]
         index = min(turn_count, len(questions) - 1)
         quality = "poor" if len(latest_answer.strip()) < 30 else "medium"
-        issues = ["回答偏短，缺少细节"] if quality == "poor" else ["可继续补充量化结果"]
+        issues = ["回答偏短，缺少细节"] if quality == "poor" else ["可以继续补充量化结果"]
         return NextQuestionResult(
             answer_quality=quality,
             detected_issues=issues,
             action="follow_up" if quality == "poor" else "next_question",
             stage=stage,
             interviewer_reply=questions[index],
-            brief_feedback="候选人回答基本相关，但需要更多结构化细节和量化结果。",
+            brief_feedback="候选人回答基本相关，但还需要更多结构化细节和量化结果。",
         )
 
     def generate_report(self) -> ReportResult:
@@ -59,7 +74,7 @@ class MockProvider:
             question_reviews=[
                 {
                     "question": "请介绍一下你的核心项目。",
-                    "answer_summary": "用户说明了项目目标和个人参与内容，但数据集、baseline 和结果对比不足。",
+                    "answer_summary": "用户说明了项目目标和个人参与内容，但数据集、baseline 和结果对比不充分。",
                     "score": 7,
                     "comment": "回答方向正确，但细节不足。",
                     "improved_answer_suggestion": "建议按照背景、方法、个人贡献、结果、反思五段式回答。",
@@ -85,7 +100,7 @@ class MockProvider:
                     "priority": "medium",
                     "problem": "科研动机表达不足",
                     "advice": "把经历和目标导师方向、未来研究兴趣建立联系。",
-                    "example": "该经历让我开始关注多模态信息融合在教育场景中的应用。",
+                    "example": "这段经历让我开始关注多模态信息融合在教育场景中的应用。",
                 },
             ],
             section_reviews=[
@@ -97,5 +112,50 @@ class MockProvider:
                 "为什么选择这个方法，而不是其他 baseline？",
                 "实验结果如何验证，是否有消融实验？",
                 "这段经历如何支撑你的保研申请方向？",
+            ],
+        )
+
+    def extract_experience_insights(self, raw_content: str, metadata: dict | None = None) -> ExperienceInsightResult:
+        target = metadata or {}
+        school = target.get("target_school") or "目标院校"
+        major = target.get("target_major") or "目标专业"
+        return ExperienceInsightResult(
+            summary=f"这篇面经主要围绕 {school} {major} 的自我介绍、科研追问和专业基础展开，适合用于模拟保研复试训练。",
+            interview_process=["候场", "自我介绍", "科研经历追问", "专业基础问题", "英语问答", "自由提问"],
+            question_categories=[
+                {
+                    "category": "科研经历",
+                    "frequency": "high",
+                    "questions": ["你在项目中具体负责什么？", "你的实验结果如何验证？"],
+                },
+                {
+                    "category": "专业基础",
+                    "frequency": "medium",
+                    "questions": ["请解释一个核心专业概念，并结合场景说明。"],
+                },
+            ],
+            real_questions=[
+                {
+                    "question": "请介绍一下你的科研项目。",
+                    "category": "科研经历",
+                    "difficulty": "medium",
+                    "source_context": "经验贴中提到导师会围绕项目背景、方法和结果连续追问。",
+                }
+            ],
+            focus_points=["科研经历真实性", "个人贡献", "专业基础", "研究方向匹配度"],
+            risk_points=[
+                {
+                    "level": "high",
+                    "point": "项目细节容易被深挖",
+                    "suggestion": "提前准备数据集、baseline、指标、误差分析和失败复盘。",
+                }
+            ],
+            suggested_strategy=["自我介绍主动埋下科研线索", "每个项目按背景、方法、贡献、结果、反思五层准备答案"],
+            timeline=[
+                {
+                    "step": "自我介绍",
+                    "estimated_minutes": 1,
+                    "notes": "通常先介绍研究兴趣和相关背景。",
+                }
             ],
         )

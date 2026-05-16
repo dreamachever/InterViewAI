@@ -1,3 +1,5 @@
+import type { ExperienceListItem } from './experience';
+
 export type InterviewRole = 'interviewer' | 'candidate';
 
 export interface InterviewConfig {
@@ -9,6 +11,7 @@ export interface InterviewConfig {
   resume_id?: string | null;
   llm_config_id?: string | null;
   voice_enabled?: boolean;
+  experience_ids?: string[];
 }
 
 export interface Message {
@@ -40,6 +43,7 @@ export interface InterviewDetail {
   total_score?: number | null;
   created_at: string;
   messages: Message[];
+  experiences: ExperienceListItem[];
 }
 
 export interface InterviewListItem {
@@ -52,6 +56,7 @@ export interface InterviewListItem {
   voice_enabled: boolean;
   total_score?: number | null;
   created_at: string;
+  experiences: ExperienceListItem[];
 }
 
 export interface SendAnswerResponse {

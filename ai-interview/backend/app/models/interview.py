@@ -5,6 +5,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Tex
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.models.experience import interview_experience_links
 
 
 class Interview(Base):
@@ -35,3 +36,4 @@ class Interview(Base):
     user = relationship("User", back_populates="interviews")
     messages = relationship("Message", back_populates="interview", cascade="all, delete-orphan", order_by="Message.created_at")
     report = relationship("Report", back_populates="interview", cascade="all, delete-orphan", uselist=False)
+    experiences = relationship("InterviewExperience", secondary=interview_experience_links, back_populates="interviews")

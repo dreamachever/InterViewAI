@@ -26,6 +26,42 @@ class NextQuestionResult(BaseModel):
     brief_feedback: str = ""
 
 
+class ExperienceQuestionCategory(BaseModel):
+    category: str
+    frequency: str = "medium"
+    questions: list[str] = Field(default_factory=list)
+
+
+class ExperienceRealQuestion(BaseModel):
+    question: str
+    category: str | None = None
+    difficulty: str | None = None
+    source_context: str | None = None
+
+
+class ExperienceRiskPoint(BaseModel):
+    level: str = "medium"
+    point: str
+    suggestion: str | None = None
+
+
+class ExperienceTimelineItem(BaseModel):
+    step: str
+    estimated_minutes: int | None = None
+    notes: str | None = None
+
+
+class ExperienceInsightResult(BaseModel):
+    summary: str = ""
+    interview_process: list[str] = Field(default_factory=list)
+    question_categories: list[ExperienceQuestionCategory] = Field(default_factory=list)
+    real_questions: list[ExperienceRealQuestion] = Field(default_factory=list)
+    focus_points: list[str] = Field(default_factory=list)
+    risk_points: list[ExperienceRiskPoint] = Field(default_factory=list)
+    suggested_strategy: list[str] = Field(default_factory=list)
+    timeline: list[ExperienceTimelineItem] = Field(default_factory=list)
+
+
 class DimensionScore(BaseModel):
     score: int
     max: int

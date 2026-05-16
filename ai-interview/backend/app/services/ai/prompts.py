@@ -3,36 +3,94 @@ import json
 
 def build_resume_analysis_prompt(resume_text: str) -> str:
     return f"""
-你是一位专业的中文面试教练。请分析候选人简历，输出严格 JSON，不要包含 markdown。
+You are an interview coach for Chinese postgraduate recommendation interviews.
+Return strict JSON only, with no markdown.
 
-需要提取：
-- 候选人画像
-- 教育背景
-- 项目/科研/实习经历
-- 优势
-- 风险点
-- 可追问问题
-- 推荐面试重点
+Extract:
+- candidate summary
+- education background
+- projects / research / internship experience
+- strengths
+- risks
+- possible follow-up questions
+- recommended interview focus
 
 JSON schema:
 {{
-  "summary": "候选人简要画像",
-  "education": "教育背景总结",
+  "summary": "candidate summary",
+  "education": "education summary",
   "projects": [
     {{
-      "name": "项目名称",
-      "description": "项目简介",
-      "possible_questions": ["可追问问题1", "可追问问题2"],
-      "risks": ["风险点1", "风险点2"]
+      "name": "project name",
+      "description": "project description",
+      "possible_questions": ["question 1", "question 2"],
+      "risks": ["risk 1", "risk 2"]
     }}
   ],
-  "strengths": ["优势1", "优势2"],
-  "risks": ["简历风险点1", "简历风险点2"],
-  "recommended_focus": ["面试重点1", "面试重点2"]
+  "strengths": ["strength 1"],
+  "risks": ["risk 1"],
+  "recommended_focus": ["focus 1"]
 }}
 
-简历文本：
+Resume text:
 {resume_text}
+""".strip()
+
+
+def build_experience_extract_prompt(raw_content: str, metadata: dict) -> str:
+    return f"""
+You are extracting actionable training knowledge for a Chinese postgraduate recommendation mock interview system.
+Return strict JSON only, with no markdown, comments, or extra text.
+
+Goal:
+- Do not write a generic article summary.
+- Extract structured interview knowledge that can directly improve mock interviews.
+- Focus on the real interview process, high-frequency questions, real questions, technical basics, research questions, English questions, pressure questions, mentor focus points, risks, preparation advice, and questioning strategy.
+- If the source text does not contain enough evidence, return empty arrays instead of inventing facts.
+- Do not fabricate specific school, lab, teacher, or major facts.
+
+JSON schema:
+{{
+  "summary": "core summary for training",
+  "interview_process": ["waiting", "self introduction"],
+  "question_categories": [
+    {{
+      "category": "research experience",
+      "frequency": "high | medium | low",
+      "questions": ["question 1", "question 2"]
+    }}
+  ],
+  "real_questions": [
+    {{
+      "question": "real question text",
+      "category": "research experience",
+      "difficulty": "easy | medium | hard",
+      "source_context": "supporting context from the article"
+    }}
+  ],
+  "focus_points": ["focus 1", "focus 2"],
+  "risk_points": [
+    {{
+      "level": "high | medium | low",
+      "point": "risk point",
+      "suggestion": "how to prepare"
+    }}
+  ],
+  "suggested_strategy": ["strategy 1", "strategy 2"],
+  "timeline": [
+    {{
+      "step": "self introduction",
+      "estimated_minutes": 1,
+      "notes": "notes"
+    }}
+  ]
+}}
+
+Metadata:
+{json.dumps(metadata, ensure_ascii=False)}
+
+Source text:
+{raw_content}
 """.strip()
 
 
@@ -42,50 +100,56 @@ def build_next_question_prompt(
     messages: list[dict],
     latest_answer: str,
     controlled_stage: str,
+    experience_context: list[dict] | None = None,
 ) -> str:
     return f"""
-你正在扮演一位真实的中文面试官，请根据配置、简历分析和对话历史，生成下一句面试官回复。
+You are a realistic Chinese interview professor for a postgraduate recommendation interview.
+Return strict JSON only, with no markdown.
 
-要求：
-- 不要一次问多个问题
-- 不要长篇辅导
-- 保持真实面试感
-- 回答空泛时继续追问
-- 回答充分时进入下一问题
-- 压力型风格可以适当质疑
-- 面试未结束前不要生成总报告
-- 当前阶段必须使用后端给定阶段：{controlled_stage}
+Rules:
+- Ask only one question at a time.
+- Sound like a real interviewer, not a study guide.
+- Prefer the high-frequency and real questions shown in the selected interview experiences, but do not mechanically repeat them.
+- Personalize follow-up questions using the candidate's resume and previous answers.
+- If the experience context suggests stronger emphasis on fundamentals, increase the probability of professional/basic theory questions.
+- If the experience context suggests English questioning, add suitable English questions at appropriate moments.
+- If the experience context contains high-risk points, probe them at natural stages.
+- If the latest answer is vague, continue follow-up; if it is strong enough, move to the next topic.
+- Do not generate a final report before the interview ends.
+- The current stage must remain exactly: {controlled_stage}
 
-输出严格 JSON，不要包含 markdown。
 JSON schema:
 {{
   "answer_quality": "poor | medium | good",
-  "detected_issues": ["问题1", "问题2"],
+  "detected_issues": ["issue 1", "issue 2"],
   "action": "follow_up | next_question | end_interview",
-  "stage": "当前阶段",
-  "interviewer_reply": "面试官下一句话",
-  "brief_feedback": "一句内部反馈，用于后续报告"
+  "stage": "{controlled_stage}",
+  "interviewer_reply": "the next interviewer reply",
+  "brief_feedback": "one short internal feedback note"
 }}
 
-面试配置：
+Interview config:
 {json.dumps(interview, ensure_ascii=False)}
 
-简历分析：
+Resume analysis:
 {json.dumps(resume_analysis, ensure_ascii=False)}
 
-当前对话历史：
+Selected experience insights:
+{json.dumps(experience_context or [], ensure_ascii=False)}
+
+Conversation history:
 {json.dumps(messages, ensure_ascii=False)}
 
-用户刚才的回答：
+Latest candidate answer:
 {latest_answer}
 """.strip()
 
 
 def build_report_prompt(interview: dict, resume_analysis: dict, messages: list[dict]) -> str:
     return f"""
-你是一位严谨的中文面试评估专家。请根据完整面试记录生成结构化评分报告。
+You are a rigorous Chinese interview evaluator.
+Return strict JSON only, with no markdown.
 
-输出严格 JSON，不要包含 markdown。
 JSON schema:
 {{
   "total_score": 78,
@@ -93,67 +157,65 @@ JSON schema:
     "表达逻辑": {{
       "score": 16,
       "max": 20,
-      "comment": "表达较清楚，但部分回答缺少结构"
+      "comment": "comment"
     }}
   }},
-  "overall_comment": "整体评价",
-  "strengths": ["优点1", "优点2"],
-  "weaknesses": ["问题1", "问题2"],
-  "resume_risks": ["风险点1", "风险点2"],
+  "overall_comment": "overall comment",
+  "strengths": ["strength 1"],
+  "weaknesses": ["weakness 1"],
+  "resume_risks": ["risk 1"],
   "question_reviews": [
     {{
-      "question": "问题",
-      "answer_summary": "用户回答摘要",
+      "question": "question",
+      "answer_summary": "answer summary",
       "score": 7,
-      "comment": "点评",
-      "improved_answer_suggestion": "建议回答方式"
+      "comment": "comment",
+      "improved_answer_suggestion": "suggestion"
     }}
   ],
-  "next_training_plan": ["训练建议1", "训练建议2"]
+  "next_training_plan": ["plan 1", "plan 2"]
 }}
 
-面试配置：
+Interview config:
 {json.dumps(interview, ensure_ascii=False)}
 
-简历分析：
+Resume analysis:
 {json.dumps(resume_analysis, ensure_ascii=False)}
 
-完整对话：
+Conversation:
 {json.dumps(messages, ensure_ascii=False)}
 """.strip()
 
 
 def build_resume_diagnostic_prompt(resume_text: str) -> str:
     return f"""
-你是一位专注保研申请与导师面试的中文简历诊断专家。请根据简历文本生成严格 JSON，不要输出 markdown 或额外解释。
-诊断要服务于保研面试场景，重点关注科研潜力、项目可信度、个人贡献、量化成果、导师可能追问风险。
+You are a Chinese resume reviewer focused on postgraduate recommendation interviews.
+Return strict JSON only, with no markdown or extra explanation.
 
 JSON schema:
 {{
   "overall_score": 82,
-  "summary": "整体诊断摘要",
-  "strengths": ["优势1", "优势2"],
-  "weaknesses": ["问题1", "问题2"],
+  "summary": "summary",
+  "strengths": ["strength 1"],
+  "weaknesses": ["weakness 1"],
   "suggestions": [
     {{
       "priority": "high | medium | low",
-      "problem": "具体问题",
-      "advice": "修改建议",
-      "example": "可参考的改写示例"
+      "problem": "specific problem",
+      "advice": "specific advice",
+      "example": "optional example"
     }}
   ],
   "section_reviews": [
     {{
-      "section": "教育背景/科研经历/项目经历/竞赛奖项/技能等",
+      "section": "education/research/project/competition/skills",
       "score": 78,
-      "comment": "该部分评价"
+      "comment": "comment"
     }}
   ],
-  "follow_up_questions": [
-    "导师可能围绕简历追问的问题"
-  ]
+  "follow_up_questions": ["possible follow-up question"]
 }}
 
-简历文本：
+Resume text:
 {resume_text}
 """.strip()

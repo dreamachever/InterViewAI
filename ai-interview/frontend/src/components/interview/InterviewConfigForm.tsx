@@ -1,6 +1,7 @@
 import { Alert, Button, Card, Form, Input, Progress, Radio, Select, Space, Switch, Tag, Typography } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { listExperiences } from '../../api/experiences';
 import { listLLMConfigs } from '../../api/llmConfigs';
 import { listResumes } from '../../api/resumes';
 import type { InterviewConfig } from '../../types/interview';
@@ -16,17 +17,22 @@ interface Props {
 
 interface FormValues extends InterviewConfig {
   resume_source: 'existing' | 'paste';
+  use_experiences: 'none' | 'selected';
 }
 
 export function InterviewConfigForm({ loading, onSubmit }: Props) {
   const [form] = Form.useForm<FormValues>();
   const resumeSource = Form.useWatch('resume_source', form);
+  const useExperiences = Form.useWatch('use_experiences', form);
   const selectedResumeId = Form.useWatch('resume_id', form);
+  const selectedExperienceIds = Form.useWatch('experience_ids', form) ?? [];
   const { data: resumes = [] } = useQuery({ queryKey: ['resumes'], queryFn: listResumes });
   const { data: llmConfigs = [] } = useQuery({ queryKey: ['llm-configs'], queryFn: listLLMConfigs });
+  const { data: experiences = [] } = useQuery({ queryKey: ['experiences', 'selectable'], queryFn: () => listExperiences() });
   const defaultResume = resumes.find((item) => item.is_default);
   const defaultConfig = llmConfigs.find((item) => item.is_default);
   const selectedResume = resumes.find((item) => item.id === selectedResumeId);
+  const selectedExperiences = experiences.filter((item) => selectedExperienceIds.includes(item.id));
 
   useEffect(() => {
     if (defaultResume && !form.getFieldValue('resume_id')) {
@@ -45,6 +51,7 @@ export function InterviewConfigForm({ loading, onSubmit }: Props) {
       target_major: values.target_major || null,
       llm_config_id: values.llm_config_id || null,
       voice_enabled: Boolean(values.voice_enabled),
+      experience_ids: values.use_experiences === 'selected' ? values.experience_ids ?? [] : [],
     };
     if (values.resume_source === 'existing') {
       payload.resume_id = values.resume_id || defaultResume?.id || null;
@@ -66,6 +73,8 @@ export function InterviewConfigForm({ loading, onSubmit }: Props) {
         resume_id: defaultResume?.id,
         llm_config_id: defaultConfig?.id,
         voice_enabled: false,
+        use_experiences: 'none',
+        experience_ids: [],
       }}
     >
       <Form.Item name="type" label="面试类型" rules={[{ required: true, message: '请选择面试类型' }]}>
@@ -124,6 +133,61 @@ export function InterviewConfigForm({ loading, onSubmit }: Props) {
       {!resumes.length && (
         <Typography.Paragraph type="secondary">你还没有上传 PDF 简历，也可以先粘贴文本创建面试。</Typography.Paragraph>
       )}
+
+      <Card size="small" title="面经增强" style={{ marginBottom: 16 }}>
+        <Form.Item name="use_experiences" label="是否使用面经">
+          <Radio.Group>
+            <Radio value="none">不使用面经</Radio>
+            <Radio value="selected">选择已有面经</Radio>
+          </Radio.Group>
+        </Form.Item>
+        {useExperiences === 'selected' && (
+          <>
+            <Form.Item
+              name="experience_ids"
+              label="选择面经（最多 3 条）"
+              rules={[{ validator: (_, value: string[] = []) => value.length <= 3 ? Promise.resolve() : Promise.reject(new Error('最多选择 3 条面经')) }]}
+            >
+              <Select
+                mode="multiple"
+                maxCount={3}
+                placeholder="按学校、专业、年份选择面经"
+                optionFilterProp="label"
+                options={experiences.map((item) => ({
+                  label: `${item.title} ｜ ${item.target_school || '未填写院校'} ｜ ${item.target_major || '未填写专业'} ｜ ${item.year || '未知年份'}`,
+                  value: item.id,
+                }))}
+              />
+            </Form.Item>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {selectedExperiences.map((item) => (
+                <Card key={item.id} size="small">
+                  <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                    <Typography.Text strong>{item.title}</Typography.Text>
+                    <Space wrap>
+                      <Tag>{item.target_school || '未填写院校'}</Tag>
+                      <Tag>{item.target_major || '未填写专业'}</Tag>
+                      <Tag>{item.interview_type || '未填写类型'}</Tag>
+                      <Tag>{item.year || '未知年份'}</Tag>
+                    </Space>
+                    <Typography.Text type="secondary">高频/真实问题数：{item.real_question_count}</Typography.Text>
+                    {item.focus_preview.length > 0 && (
+                      <Space wrap>{item.focus_preview.map((point) => <Tag color="blue" key={point}>{point}</Tag>)}</Space>
+                    )}
+                    {item.high_risk_preview.length > 0 && (
+                      <Space wrap>{item.high_risk_preview.map((point) => <Tag color="red" key={point}>{point}</Tag>)}</Space>
+                    )}
+                  </Space>
+                </Card>
+              ))}
+              {!experiences.length && (
+                <Alert type="info" showIcon message="你还没有面经数据，可以先去面经库新增，再回来创建增强面试。" />
+              )}
+            </Space>
+          </>
+        )}
+      </Card>
+
       <Space direction="vertical" style={{ width: '100%' }}>
         <Button type="primary" htmlType="submit" loading={loading} block size="large">开始面试</Button>
       </Space>

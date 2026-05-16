@@ -19,6 +19,7 @@ export function NewInterviewPage() {
       ...values,
       target_school: values.target_school || null,
       target_major: values.target_major || null,
+      experience_ids: values.experience_ids ?? [],
     });
   };
 

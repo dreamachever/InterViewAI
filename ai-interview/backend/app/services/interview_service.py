@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models.interview import Interview
 from app.models.message import Message
+from app.repositories.experience_repository import ExperienceRepository
 from app.repositories.llm_config_repository import LLMConfigRepository
 from app.repositories.interview_repository import InterviewRepository
 from app.repositories.message_repository import MessageRepository
@@ -25,6 +26,7 @@ class InterviewService:
         self.interviews = InterviewRepository(db)
         self.messages = MessageRepository(db)
         self.resumes = ResumeRepository(db)
+        self.experiences = ExperienceRepository(db)
         self.llm_configs = LLMConfigRepository(db)
 
     async def create_interview(self, payload: InterviewCreate, user_id: str) -> tuple[Interview, Message]:
@@ -36,17 +38,24 @@ class InterviewService:
             resume_text = resume.parsed_text
         if payload.llm_config_id and not self.llm_configs.get_for_user(payload.llm_config_id, user_id):
             raise HTTPException(status_code=404, detail="LLM config not found")
+        linked_experiences = self._resolve_linked_experiences(payload.experience_ids, user_id)
         analysis = await self.llm.analyze_resume(resume_text, self.db, user_id, payload.llm_config_id)
         provider, model = self.llm.provider_meta()
         interview = Interview(
-            **payload.model_dump(exclude={"resume_text"}),
+            **payload.model_dump(exclude={"resume_text", "experience_ids"}),
             user_id=user_id,
             resume_text=resume_text,
             resume_analysis=analysis.model_dump(),
-            interview_plan={"source": "resume_analysis", "resume_source": "uploaded_resume" if payload.resume_id else "pasted_text"},
+            interview_plan={
+                "source": "resume_analysis",
+                "resume_source": "uploaded_resume" if payload.resume_id else "pasted_text",
+                "experience_ids": [item.id for item in linked_experiences],
+                "experience_count": len(linked_experiences),
+            },
             llm_provider_used=provider,
             llm_model_used=model,
         )
+        interview.experiences = linked_experiences
         interview = self.interviews.create(interview)
         first_message = self.messages.create(
             Message(interview_id=interview.id, role="interviewer", content=FIRST_QUESTION, stage=interview.current_stage)
@@ -82,12 +91,14 @@ class InterviewService:
             self.messages.create(Message(interview_id=interview.id, role="interviewer", content=reply, stage=stage_for_answer))
             return AnswerResponse(reply=reply, stage=stage_for_answer, action="end_interview")
 
+        experience_context = self._experience_context(interview)
         ai_result = await self.llm.generate_next_question(
             self._interview_payload(interview),
             interview.resume_analysis or {},
             [self._message_payload(m) for m in messages],
             answer,
             stage_for_answer,
+            experience_context,
             self.db,
             user_id,
             interview.llm_config_id,
@@ -103,6 +114,7 @@ class InterviewService:
                 [self._message_payload(m) for m in messages],
                 answer,
                 controlled_stage,
+                experience_context,
                 self.db,
                 user_id,
                 interview.llm_config_id,
@@ -135,6 +147,7 @@ class InterviewService:
             "target_school": interview.target_school,
             "target_major": interview.target_major,
             "current_stage": interview.current_stage,
+            "linked_experience_count": len(interview.experiences or []),
         }
 
     @staticmethod
@@ -145,3 +158,41 @@ class InterviewService:
             "stage": message.stage,
             "created_at": message.created_at.isoformat(),
         }
+
+    def _resolve_linked_experiences(self, experience_ids: list[str], user_id: str):
+        if not experience_ids:
+            return []
+        unique_ids = list(dict.fromkeys(experience_ids))
+        if len(unique_ids) > 3:
+            raise HTTPException(status_code=422, detail="At most 3 experiences can be selected")
+        experiences = self.experiences.list_for_user_by_ids(unique_ids, user_id)
+        if len(experiences) != len(unique_ids):
+            raise HTTPException(status_code=404, detail="One or more experiences not found")
+        experiences_by_id = {item.id: item for item in experiences}
+        return [experiences_by_id[item_id] for item_id in unique_ids]
+
+    @staticmethod
+    def _experience_context(interview: Interview) -> list[dict]:
+        context = []
+        for experience in interview.experiences or []:
+            latest = experience.latest_insight
+            if not latest:
+                continue
+            context.append(
+                {
+                    "title": experience.title,
+                    "target_school": experience.target_school,
+                    "target_major": experience.target_major,
+                    "interview_type": experience.interview_type,
+                    "year": experience.year,
+                    "summary": experience.summary,
+                    "interview_process": latest.interview_process_json or [],
+                    "question_categories": latest.question_categories_json or [],
+                    "real_questions": latest.real_questions_json or [],
+                    "focus_points": latest.focus_points_json or [],
+                    "risk_points": latest.risk_points_json or [],
+                    "suggested_strategy": latest.suggested_strategy_json or [],
+                    "timeline": latest.timeline_json or [],
+                }
+            )
+        return context
